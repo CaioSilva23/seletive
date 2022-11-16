@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .models import Tecnologias, Vagas, Empresa
 from django.contrib.messages import constants
@@ -46,7 +46,17 @@ def nova_empresa(request):
 
 
 def empresas(request):
+
+    nome_fitrar = request.GET.get('nome')
+    tecnologias_fitrar = request.GET.get('tecnologias')
     empresas = Empresa.objects.all()
+    
+
+    if tecnologias_fitrar:
+        empresas = empresas.filter(tecnologias=tecnologias_fitrar)
+    if nome_fitrar:
+        empresas = empresas.filter(nome__icontains=nome_fitrar)
+        
     tecnologias = Tecnologias.objects.all()
     return render(request, 'empresas.html', {'empresas': empresas, 'tecnologias': tecnologias})
 
@@ -56,3 +66,9 @@ def excluir_empresa(request, id):
     empresa.delete()
     messages.add_message(request, constants.SUCCESS, 'Empresa deletada com sucesso')
     return redirect('/home/empresas')
+
+
+def empresa(request, id):
+    empresa = get_object_or_404(Empresa, id=id)
+
+    return render(request, 'empresa.html', {'empresa': empresa})
