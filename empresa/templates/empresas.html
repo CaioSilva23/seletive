@@ -38,6 +38,7 @@
 
                         <div class="col-md-4">
                             <select class="form-select" name="tecnologias">
+                                <option value="">---------</option>
                                 {% for tech in tecnologias %}
                                 <option value="{{ tech.id }}">{{ tech }}</option>
                                 {% endfor %}

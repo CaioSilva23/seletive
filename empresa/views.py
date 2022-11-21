@@ -42,7 +42,7 @@ def nova_empresa(request):
         empresa.tecnologias.add(*tecnologias)
         empresa.save()
         messages.add_message(request, constants.SUCCESS, 'Empresa cadastrada com sucesso')
-        return redirect('/home/nova_empresa')
+        return redirect('/nova_empresa')
 
 
 def empresas(request):
@@ -51,7 +51,7 @@ def empresas(request):
     tecnologias_fitrar = request.GET.get('tecnologias')
     empresas = Empresa.objects.all()
     
-
+    print(nome_fitrar)
     if tecnologias_fitrar:
         empresas = empresas.filter(tecnologias=tecnologias_fitrar)
     if nome_fitrar:
@@ -65,10 +65,12 @@ def excluir_empresa(request, id):
     empresa = Empresa.objects.get(id=id)
     empresa.delete()
     messages.add_message(request, constants.SUCCESS, 'Empresa deletada com sucesso')
-    return redirect('/home/empresas')
+    return redirect('/empresas')
 
 
 def empresa(request, id):
     empresa = get_object_or_404(Empresa, id=id)
+    vagas = Vagas.objects.filter(empresa_id=id)
+    tecnologias = Tecnologias.objects.all()
+    return render(request, 'empresa.html', {'empresa': empresa, 'tecnologias': tecnologias, 'vagas': vagas})
 
-    return render(request, 'empresa.html', {'empresa': empresa})
