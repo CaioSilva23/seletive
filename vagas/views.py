@@ -3,6 +3,7 @@ from django.http import HttpResponse, Http404
 from empresa.models import Vagas
 from django.contrib.messages import constants
 from django.contrib import messages
+from .models import Tarefa
 
 # Create your views here.
 
@@ -40,8 +41,33 @@ def nova_vaga(request):
 
 def vaga(request, id):
     vaga = get_object_or_404(Vagas, id=id)
-    return render(request, 'vagas.html', {'vaga': vaga})
+    tafera = Tarefa.objects.filter(vaga=vaga).filter(realizada=False)
+    return render(request, 'vagas.html', {'vaga': vaga, 'tarefa': tafera})
 
 
 def nova_tarefa(request, id_vaga):
-    pass
+    titulo = request.POST.get('titulo')
+    prioridade = request.POST.get("prioridade")
+    data = request.POST.get('data')
+    
+    tarefa = Tarefa(vaga_id=id_vaga,
+                    titulo=titulo,
+                    prioridade=prioridade,
+                    data=data)
+    tarefa.save()
+    messages.add_message(request, constants.SUCCESS, 'Tarefa criada com sucesso')
+    return redirect(f'/vagas/vaga/{id_vaga}')
+
+
+def realizar_tarefa(request, id):
+    tarefa_list = Tarefa.objects.filter(id=id).filter(realizada=False)
+    print(tarefa_list)
+    if not tarefa_list.exists():
+        messages.add_message(request, constants.ERROR, 'Realize apenas tarefas válidas!')
+        return redirect('/empresas/')
+    tarefa = tarefa_list.first()
+    tarefa.realizada = True
+    tarefa.save()
+    messages.add_message(request, constants.SUCCESS, 'Tarefa finalizada com sucesso!')
+
+    return redirect(f'/vagas/vaga/{tarefa.vaga.id}')
