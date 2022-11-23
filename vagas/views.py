@@ -3,7 +3,13 @@ from django.http import HttpResponse, Http404
 from empresa.models import Vagas
 from django.contrib.messages import constants
 from django.contrib import messages
-from .models import Tarefa
+from .models import Tarefa, Emails
+from django.conf import settings
+
+#EMAIL
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.core.mail import EmailMultiAlternatives
 
 # Create your views here.
 
@@ -42,7 +48,8 @@ def nova_vaga(request):
 def vaga(request, id):
     vaga = get_object_or_404(Vagas, id=id)
     tafera = Tarefa.objects.filter(vaga=vaga).filter(realizada=False)
-    return render(request, 'vagas.html', {'vaga': vaga, 'tarefa': tafera})
+    emails = Emails.objects.filter(vaga_id=id)
+    return render(request, 'vagas.html', {'vaga': vaga, 'tarefa': tafera, 'emails':emails})
 
 
 def nova_tarefa(request, id_vaga):
@@ -61,7 +68,6 @@ def nova_tarefa(request, id_vaga):
 
 def realizar_tarefa(request, id):
     tarefa_list = Tarefa.objects.filter(id=id).filter(realizada=False)
-    print(tarefa_list)
     if not tarefa_list.exists():
         messages.add_message(request, constants.ERROR, 'Realize apenas tarefas válidas!')
         return redirect('/empresas/')
@@ -71,3 +77,42 @@ def realizar_tarefa(request, id):
     messages.add_message(request, constants.SUCCESS, 'Tarefa finalizada com sucesso!')
 
     return redirect(f'/vagas/vaga/{tarefa.vaga.id}')
+
+
+def envia_email(request, id_vaga):
+    vaga = Vagas.objects.get(id=id_vaga)
+
+    assunto = request.POST.get('titulo ')
+    corpo = request.POST.get('corpo')
+
+    print(assunto)
+    html_content = render_to_string('emails/email.html', {'corpo':corpo})
+    text_content = strip_tags(html_content)
+
+    email = EmailMultiAlternatives(assunto, 
+                                    text_content, 
+                                    settings.EMAIL_HOST_USER,
+                                    [vaga.email,]
+                                    )
+    email.attach_alternative(html_content, 'text/html')
+
+    if email.send():
+        mail = Emails(
+            vaga=vaga,
+            assunto=assunto,
+            corpo=corpo,
+            enviado=True,
+        )
+        mail.save()
+        messages.add_message(request, constants.SUCCESS, 'Email enviado com sucesso!')
+        return redirect(f'/vagas/vaga/{id_vaga}')
+    else:
+        mail = Emails(
+        vaga=vaga,
+        assunto=assunto,
+        corpo=corpo,
+        enviado=False
+        )
+        mail.save()
+        messages.add_message(request, constants.ERROR, 'Não conseguimos enviar o seu email!')
+        return redirect(f'/vagas/vaga/{id_vaga}')
