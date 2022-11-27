@@ -31,6 +31,8 @@ def nova_empresa(request):
             messages.add_message(request, constants.ERROR, 'Nicho de mercado inválido')
             return redirect('/home/nova_empresa')
 
+
+    
         empresa = Empresa(logo=logo,
                         nome=nome,
                         email=email,
